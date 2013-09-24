@@ -2,7 +2,8 @@
 param(
     [Parameter(
         Mandatory = $true,
-        HelpMessage = "Enter String of Text")]
+        HelpMessage = "Enter String of Text"
+    )]
     [String]$String
 )
 
