@@ -151,10 +151,45 @@ Param(
 )
     ForEach($Entry in $Path){
         If(!([System.IO.Directory]::Exists($entry))){
-            [System.IO.Directory]::CreateDirectory($Entry) | Out-Null
-            Write-Output "Directory $entry on $env:COMPUTERNAME : created"
+            try{
+                [System.IO.Directory]::CreateDirectory($Entry) | Out-Null
+                Write-Output "Directory $entry on $env:COMPUTERNAME : created"
+            }
+            catch{
+            }
+            
         }Else{
             Write-Output "Directory $entry on $env:COMPUTERNAME : already present"
+        }
+    }
+}
+
+Function Create-File{
+<#
+#>
+[CmdletBinding()]
+Param(
+    [Parameter(
+        Mandatory = $true,
+        HelpMessage = "Literal path of the file, only works with \"
+    )]
+    [String[]]$File
+)
+    ForEach($entry in $File){
+        $parentfolder = $entry.remove($entry.LastIndexOf("\"))
+        If(!([System.IO.Directory]::Exists($parentfolder))){
+            Write-Verbose "Parentfolder not present, creating it"
+            Create-Folder $parentfolder | Out-Null
+        }
+        If(!([System.IO.File]::Exists($entry))){
+            try{
+                [System.IO.File]::Create($entry) | Out-Null
+                Write-Output "File $entry on $env:COMPUTERNAME : created"
+            }
+            catch{
+            }
+        }Else{
+            Write-Output "File $entry on $env:COMPUTERNAME : already present"
         }
     }
 }
