@@ -18,8 +18,7 @@ param(
     $notletters = '!','"','£','$','€','%','&','^','°','*','(',')','@','=','+','¬','`','\','<','>','.',',','?','/',':',';','#','~',"'",'0','1','2','3','4','5','6','7','8','9','-'
     $removepattern = [String]::Join("|",($notletters | %{[Regex]::Escape($_)}))
 
-    $String = $String.ToLower()
-    $String = $String -replace $removepattern,""
+    $String = $String.ToLower() -replace $removepattern,""
 
     $NumberOfWords = ($String | Measure-Object -Word).Words
 
@@ -32,13 +31,15 @@ param(
     $Words = $String.Split(" ") | Where Length -ne 0
 
     ForEach($word in $Words){
-        $list = $template | Select-Object *
-        If(!($masterlist | Where Word -eq $word)){
+        $match = $masterlist | Where Word -eq $word
+        
+        If(!($match)){
+            $list = $template | Select-Object *
+
             $list.Word = $word
             $list.Appearances = "1"
             $masterlist += $list
         }Else{
-            $match = $masterlist | Where Word -eq $word
             
             $counter = ($match.Appearances).ToInt32($_) #needs to be converted as noteproperties are string only
             $counter++
