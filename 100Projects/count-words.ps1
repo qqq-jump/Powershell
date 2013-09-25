@@ -38,10 +38,13 @@ param(
             $list.Appearances = "1"
             $masterlist += $list
         }Else{
-            $counter = (($masterlist | Where Word -eq $word).Appearances).ToInt32($_) #needs to be converted as noteproperties are string only
+            $match = $masterlist | Where Word -eq $word
+            
+            $counter = ($match.Appearances).ToInt32($_) #needs to be converted as noteproperties are string only
             $counter++
             $counter = $counter.ToString()
-            ($masterlist | Where Word -eq $word).Appearances = $counter
+            
+            $match.Appearances = $counter
         }
     }
     
