@@ -8,7 +8,7 @@ param(
         Mandatory = $true,
         HelpMessage = "String to be analyzed"
     )]
-    [String]$String,
+    [String[]]$String,
     [Parameter(
         HelpMessage = "Number of entries of the top statistics shown"
     )]
