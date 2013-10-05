@@ -25,11 +25,13 @@ param(
     [Parameter(
         HelpMessage = "Unit of Byte Conversion"
     )]
-    [String]$Unit = "GB", #is there a type for this :/ would look way better.
+    [ValidateSet("KB","MB","GB","TB","PB")]
+    [String]$Unit = "GB",
     [Parameter(
         HelpMessage = "# of Characters to Round to"
     )]
-    [Int]$n = 2
+    [ValidateRange(0,15)]
+    [Byte]$n = 2
 )
     $Table = New-Object System.Data.DataTable "DriveData"
 
