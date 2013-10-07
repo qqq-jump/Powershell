@@ -24,18 +24,20 @@ Grabs Drive Information from the Client Styx, Data will be stored in MB till the
 #>
 param(
     [Parameter(
-        Mandatory = $true,
+        Position = 0,
         HelpMessage = "Computername"
     )]
-    [String[]]$Computername,
+    [String]$Computername = $env:COMPUTERNAME,
 
     [Parameter(
+        Position = 1,
         HelpMessage = "Unit of Byte Conversion"
     )]
     [ValidateSet("KB","MB","GB","TB","PB")]
     [String]$Unit = "GB",
 
     [Parameter(
+        Position = 2,
         HelpMessage = "# of Characters to Round to"
     )]
     [ValidateRange(0,15)]
@@ -61,16 +63,16 @@ param(
             (New-Object System.Data.DataColumn $Split[0],$Split[1])
         )
     }
-
-    Foreach($Computer in $Computername){
         try{
             $drives = Get-WmiObject `
-                -Class Win32_Logicaldisk `                -ComputerName $Computer `                -ErrorAction Stop | Where {$_.DriveType -eq 3}
+                -Class Win32_Logicaldisk `
+                -ComputerName $Computername `
+                -ErrorAction Stop | Where {$_.DriveType -eq 3}
 
             For($i = 0;$i -lt $drives.Count;$i++){
                 $row = $Table.NewRow()
         
-                $row.ComputerName = $Computer
+                $row.ComputerName = $drives[$i].__SERVER
                 $row.Drive = $drives[$i].DeviceID
                 $row.UnitSize = $Unit
         
@@ -95,16 +97,43 @@ param(
             }
         }
         catch [System.UnauthorizedAccessException]{
-            "Credentials didn't have the authority to access required data on $Computer"
+            "Credentials didn't have the authority to access required data on $Computername"
         }
         catch [System.Management.ManagementException]{
-            "Credentials weren't accepted by $Computer"
+            "Credentials weren't accepted by $Computername"
         }
         catch [Exception]{
             If($_.Exception.GetType().Name -eq "COMException"){
-                "Couldn't establish a connection to $Computer"
+                "Couldn't establish a connection to $Computername"
             }
-        }
     }
     return $Table
+}
+
+Function test{
+param(
+    [Parameter(
+        HelpMessage = "Computername"
+    )]
+    [String[]]$Computername = $env:COMPUTERNAME,
+
+    [Parameter(
+        HelpMessage = "Unit of Byte Conversion"
+    )]
+    [ValidateSet("KB","MB","GB","TB","PB")]
+    [String]$Unit = "GB",
+
+    [Parameter(
+        HelpMessage = "# of Characters to Round to"
+    )]
+    [ValidateRange(0,15)]
+    [Int]$n = 2
+)
+    For($i = 0;$i -lt $Computername.Count;$i++){
+        Start-Job -ScriptBlock ${Function:Get-Drivedata} -ArgumentList $Computername[$i],$Unit,$n | Out-Null
+    }
+
+    Wait-Job * | Out-Null
+    Receive-Job *
+    Remove-Job *
 }
