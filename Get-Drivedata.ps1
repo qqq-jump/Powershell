@@ -45,95 +45,74 @@ param(
 )
     $Date = Get-Date -UFormat "%Y-%m-%d"
 
-    $Table = New-Object System.Data.DataTable "DriveData"
-
-    $Columns = "Computername.String",
-               "Drive.String",
-               "UnitSize.String",
-               "Size.Decimal",
-               "Used.Decimal",
-               "Free.Decimal",
-               "PercentageFree.Double",
-               "Date.String"
-    
-    For($i = 0;$i -lt $Columns.Count;$i++){
-        $Split = $Columns[$i].Split(".")
-
-        $Table.Columns.Add(
-            (New-Object System.Data.DataColumn $Split[0],$Split[1])
-        )
-    }
-        try{
-            $drives = Get-WmiObject `
-                -Class Win32_Logicaldisk `
-                -ComputerName $Computername `
-                -ErrorAction Stop | Where {$_.DriveType -eq 3}
-
-            For($i = 0;$i -lt $drives.Count;$i++){
-                $row = $Table.NewRow()
-        
-                $row.ComputerName = $drives[$i].__SERVER
-                $row.Drive = $drives[$i].DeviceID
-                $row.UnitSize = $Unit
-        
-                $row.Size = [Math]::Round(
-                    ($drives[$i].Size / "1$Unit"),$n
-                )
-
-                $row.Used = [Math]::Round(
-                    ($drives[$i].Size / "1$Unit") - ($drives[$i].FreeSpace / "1$Unit"),$n
-                )
-
-                $row.Free = [Math]::Round(
-                    ($drives[$i].FreeSpace / "1$Unit"),$n
-                )
-
-                $row.PercentageFree = [Math]::Round(
-                    ($drives[$i].FreeSpace / "1$Unit") / ($drives[$i].Size / "1$Unit") * 100,$n
-                )
-
-                $row.Date = $Date
-                $Table.Rows.Add($row)
-            }
-        }
-        catch [System.UnauthorizedAccessException]{
-            "Credentials didn't have the authority to access required data on $Computername"
-        }
-        catch [System.Management.ManagementException]{
-            "Credentials weren't accepted by $Computername"
-        }
-        catch [Exception]{
-            If($_.Exception.GetType().Name -eq "COMException"){
-                "Couldn't establish a connection to $Computername"
-            }
-    }
-    return $Table
-}
-
-Function test{
-param(
-    [Parameter(
-        HelpMessage = "Computername"
-    )]
-    [String[]]$Computername = $env:COMPUTERNAME,
-
-    [Parameter(
-        HelpMessage = "Unit of Byte Conversion"
-    )]
-    [ValidateSet("KB","MB","GB","TB","PB")]
-    [String]$Unit = "GB",
-
-    [Parameter(
-        HelpMessage = "# of Characters to Round to"
-    )]
-    [ValidateRange(0,15)]
-    [Int]$n = 2
-)
     For($i = 0;$i -lt $Computername.Count;$i++){
-        Start-Job -ScriptBlock ${Function:Get-Drivedata} -ArgumentList $Computername[$i],$Unit,$n | Out-Null
-    }
 
-    Wait-Job * | Out-Null
-    Receive-Job *
-    Remove-Job *
+        Start-Job -ArgumentList $Computername[$i],$Unit,$n,$Date -ScriptBlock{
+        
+
+            $Table = New-Object System.Data.DataTable "DriveData"
+
+            $Columns = "Computername.String",
+                       "Drive.String",
+                       "UnitSize.String",
+                       "Size.Decimal",
+                       "Used.Decimal",
+                       "Free.Decimal",
+                       "PercentageFree.Double",
+                       "Date.String"
+    
+            For($i = 0;$i -lt $Columns.Count;$i++){
+                $Split = $Columns[$i].Split(".")
+
+                $Table.Columns.Add(
+                    (New-Object System.Data.DataColumn $Split[0],$Split[1])
+                )
+            }
+                try{
+                    $drives = Get-WmiObject `
+                        -Class Win32_Logicaldisk `
+                        -ComputerName $args[0] `
+                        -ErrorAction Stop | Where {$_.DriveType -eq 3}
+
+                    For($i = 0;$i -lt $drives.Count;$i++){
+                        $row = $Table.NewRow()
+        
+                        $row.ComputerName = $drives[$i].__SERVER
+                        $row.Drive = $drives[$i].DeviceID
+                        $row.UnitSize = $args[1]
+        
+                        $row.Size = [Math]::Round(
+                            ($drives[$i].Size / ("1" + $args[1])),$args[2]
+                        )
+
+                        $row.Used = [Math]::Round(
+                            ($drives[$i].Size / ("1" + $args[1])) - ($drives[$i].FreeSpace / ("1" + $args[1])),$args[2]
+                        )
+
+                        $row.Free = [Math]::Round(
+                            ($drives[$i].FreeSpace / ("1" + $args[1])),$args[2]
+                        )
+
+                        $row.PercentageFree = [Math]::Round(
+                            ($drives[$i].FreeSpace / ("1" + $args[1])) / ($drives[$i].Size / ("1" + $args[1])) * 100,$args[2]
+                        )
+
+                        $row.Date = $args[3]
+                        $Table.Rows.Add($row)
+                    }
+                }
+                catch [System.UnauthorizedAccessException]{
+                    "Credentials didn't have the authority to access required data on " + $args[0]
+                }
+                catch [System.Management.ManagementException]{
+                    "Credentials weren't accepted by " + $args[0]
+                }
+                catch [Exception]{
+                    If($_.Exception.GetType().Name -eq "COMException"){
+                        "Couldn't establish a connection to " + $args[0]
+                    }
+            }
+            return $Table
+        } | Out-Null
+    }
 }
