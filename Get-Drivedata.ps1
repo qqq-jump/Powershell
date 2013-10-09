@@ -9,6 +9,7 @@ TODO:
 - exit codes (or somehting like that)
 - more examples
 - cleaning up the code
+- integrate verbose messages / changes to the code
 - rework the remoting like describe at the bottom of the page here: http://technet.microsoft.com/en-us/library/hh849718.aspx
 #>
 Function Get-Drivedata{
@@ -140,5 +141,5 @@ param(
 
         Remove-Job -Name ("Get-Drivedata" + $i)
     }
-    return $masterlist
+    return $masterlist | Select -Property * -ExcludeProperty RunspaceID
 }
