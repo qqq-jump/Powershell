@@ -171,7 +171,7 @@ Function Create-File{
 Param(
     [Parameter(
         Mandatory = $true,
-        HelpMessage = "Literal path of the file, only works with \"
+        HelpMessage = 'Literal path of the file, only works with "\"'
     )]
     [String[]]$File
 )
