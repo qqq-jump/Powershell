@@ -36,6 +36,7 @@ Initial info from newslacker.net
 .Link
 https://github.com/qqq-jump/Powershell
 http://blog.newslacker.net/2012/03/powershell-executing-net-web-request.html
+http://stackoverflow.com/questions/8919414/powershell-http-post-rest-api-basic-authentication
 
 #>
 param(
@@ -64,7 +65,7 @@ param(
 )
 
     Write-Verbose 'Creating WebRequest'
-    [Net.HttpWebRequest]$req = [Net.WebRequest]::Create($URL)
+    $req = [Net.WebRequest]::Create($URL)
     $req.Method = 'GET'
     $req.Timeout = $Timeout
 
@@ -89,16 +90,11 @@ param(
     }
 
     Write-Verbose 'Trying to get a response from $URL'
-    [Net.HttpWebResponse]$result = $req.GetResponse()
+    $result = $req.GetResponse()
 
     Write-Verbose 'reading response'
-    [IO.Stream]$stream = $result.GetResponseStream()
-    [IO.StreamReader]$reader =  $stream
-    [String]$output = $reader.ReadToEnd()
-    
-    Write-Verbose 'Flushing & Closing $stream'
-    $stream.Flush()
-    $stream.Close()
+    [IO.StreamReader]$stream = $result.GetResponseStream()
+    $output = $stream.ReadToEnd()
 
     If($AsFile){
         
