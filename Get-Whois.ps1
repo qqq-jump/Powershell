@@ -1,11 +1,11 @@
 ﻿<#
 TODO:
 - Work on the Description, Examples, etc.
-- Add a admin-c and tech-c lookup (currently not implemented?)
-- Default to local IP if none other specified
-- accept dns
+- Add a admin-c and tech-c lookup (currently not implemented? request to ripe sent)
+- nslookup through  Validate-Address should go against ripe db in this case....
 - remove curly brackets from 'authority'
 - Error handling
+- CLEANUP
 #>
 
 Function Get-Whois{
@@ -28,12 +28,17 @@ Country         : DE
 #>
 param(
     [Parameter(
-        Mandatory = $true
     )]
-    [IPAddress]$Address
+    $Address = (Get-MyIP).ip
 
 )
-    
+    If((Validate-Address $Address).IP){
+        $Address = (Validate-Address $Address).IP
+    }
+    Else{
+        Write-Output "$Address is not a valid IP Address or Hostname."
+        break
+    }
     
     $apiurl = "https://stat.ripe.net/data/whois/data.json?resource=" + $Address
 
